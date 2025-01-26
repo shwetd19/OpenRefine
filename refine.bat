@@ -186,10 +186,38 @@ if ""%ACTION%"" == ""extensions_test"" goto doMvn
 if ""%ACTION%"" == ""test"" goto doMvn
 if ""%ACTION%"" == ""lint"" goto doMvn
 if ""%ACTION%"" == ""clean"" goto doMvn
+if ""%ACTION%"" == ""dist"" goto doDist
 if ""%ACTION%"" == ""run"" goto doRun
 if ""%ACTION%"" == """" goto doRun
   echo Unknown Refine command called "%1", type "refine /?" for proper usage.
   exit /B 1
+
+:doDist
+set VERSION=%2
+if ""%VERSION%"" == """" (
+    echo Error: Version parameter is required for dist command.
+    echo Usage: refine dist ^<version^>
+    exit /B 1
+)
+
+rem Build OpenRefine with specified version
+call "%MVN%" -Drevision=%VERSION% package -P windows
+
+rem Create installer using Inno Setup
+if not exist "packaging\windows\OpenRefine.iss" (
+    echo Error: Inno Setup script not found at packaging\windows\OpenRefine.iss
+    exit /B 1
+)
+
+if not exist "%PROGRAMFILES(X86)%\Inno Setup 6\ISCC.exe" (
+    echo Error: Inno Setup 6 not found. Please install it from http://www.jrsoftware.org/isinfo.php
+    exit /B 1
+)
+
+echo Creating Windows installer for OpenRefine %VERSION%...
+"%PROGRAMFILES(X86)%\Inno Setup 6\ISCC.exe" /DMyAppVersion=%VERSION% "packaging\windows\OpenRefine.iss"
+goto :eof
+
 
 :doRun
 
